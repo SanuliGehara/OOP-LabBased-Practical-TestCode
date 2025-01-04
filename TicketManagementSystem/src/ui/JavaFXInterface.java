@@ -1,7 +1,6 @@
 package ui;
 import config.Configuration;
 import core.TicketPool;
-import exceptions.InvalidConfigurationException;
 import logging.Logger;
 import threads.Customer;
 import threads.Vendor;
@@ -22,6 +21,7 @@ public class JavaFXInterface extends Application {
     private TicketPool ticketPool;
     private Thread vendorThread;
     private Thread customerThread;
+    private ListView<String> ticketListView;  // Q - 6) UPDATE KARANNA ONE EWATA
 
     @Override
     public void start(Stage primaryStage) {
@@ -56,6 +56,11 @@ public class JavaFXInterface extends Application {
         statusLabel = new Label("System Status: Stopped");
         gridPane.add(statusLabel, 0, 5, 2, 1);
 
+        // --------- 6) Ticket pool status list --------------------
+        ticketListView = new ListView<>();
+        gridPane.add(new Label("Ticket Pool:"), 0, 8);
+        gridPane.add(ticketListView, 0, 9, 2, 1);
+
         // Log Table
         logTable = new TableView<>();
         logTable.setPlaceholder(new Label("Logs will appear here"));
@@ -68,7 +73,7 @@ public class JavaFXInterface extends Application {
                 startSystem();
             } catch (Exception e) {
                 Logger.log("Error starting system: " + e.getMessage());
-                updateStatus(e + " | Error: Check input values.");
+                updateStatus("Error: Check input values.");
             }
         });
 
@@ -76,7 +81,7 @@ public class JavaFXInterface extends Application {
         stopButton.setOnAction(event -> stopSystem());
 
         // Scene setup
-        Scene scene = new Scene(gridPane, 600, 400);
+        Scene scene = new Scene(gridPane, 800, 600);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -91,18 +96,17 @@ public class JavaFXInterface extends Application {
         int maxTicketCapacity = validateInput(maxTicketCapacityField.getText(), "Max Ticket Capacity");
 
 //                 Initialize configuration and ticket pool
-        Configuration config = null;
+                Configuration config = new Configuration(totalTickets, ticketReleaseRate,
+                        customerRetrievalRate, maxTicketCapacity);
+        ticketPool = new TicketPool();
 
-        try {
-            config = new Configuration(totalTickets, ticketReleaseRate,
-                    customerRetrievalRate, maxTicketCapacity);
-        }
-        catch (InvalidConfigurationException e) {
-            Logger.log("InvalidConfigurationException occured!");
-            e.printStackTrace();
-        }
-
-        ticketPool = new TicketPool(config.getMaxTicketCapacity());
+        // ----------- 6) Update List View to show current tickets in the system -------------------------
+        ticketPool.setUpdateListViewGUI(() -> {
+            Platform.runLater(() -> { // This ensures the GUI updates safely.
+                ticketListView.getItems().clear(); // Clear the current list.
+                ticketListView.getItems().addAll(ticketPool.getTickets()); // Add updated tickets.
+            });
+        });
 
         // Start threads
         vendorThread = new Thread(new Vendor(ticketPool, config.getTicketReleaseRate()), "Vendor");
@@ -110,6 +114,7 @@ public class JavaFXInterface extends Application {
         vendorThread.start();
         customerThread.start();
         updateStatus("System Running...");
+
     }
 
     // Stop the system - interupt all threads

@@ -52,3 +52,24 @@ public class Main {
     public static boolean isRunning() {return running;}
 }
 ```
+**CommandLineInterface.java**
+
+Added ManageSystem() method to manage the system stop, when "y" is entered while system is running.
+```
+
+    //---------- STOP the system - Manage system STop --------------
+    public static void manageSystem(Runnable stopCallback) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("System is running. Type 'Y' to gracefully shutdown.");
+
+        while (true) {
+            String input = scanner.nextLine().trim();
+            if (input.equalsIgnoreCase("Y")) {
+                stopCallback.run();
+                break;
+            } else {
+                System.out.println("Invalid command. Type 'Y' to shutdown.");
+            }
+        }
+    }
+```

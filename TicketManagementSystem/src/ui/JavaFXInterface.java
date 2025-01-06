@@ -10,6 +10,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+import java.util.ArrayList;
 
 public class JavaFXInterface extends Application {
     private TextField totalTicketsField;
@@ -22,6 +23,8 @@ public class JavaFXInterface extends Application {
     private Thread vendorThread;
     private Thread customerThread;
     private ListView<String> ticketListView;  // Q - 6) UPDATE KARANNA ONE EWATA
+    private List<Thread> vendorThreads = new ArrayList<>();
+    private List<Thread> customerThreads = new ArrayList<>();
 
     @Override
     public void start(Stage primaryStage) {
@@ -109,19 +112,26 @@ public class JavaFXInterface extends Application {
         });
 
         // Start threads
-        vendorThread = new Thread(new Vendor(ticketPool, config.getTicketReleaseRate()), "Vendor");
-        customerThread = new Thread(new Customer(ticketPool), "Customer");
-        vendorThread.start();
-        customerThread.start();
+        for (int i =0; i<4; i++) {
+            vendorThread = new Thread(new Vendor(ticketPool, config.getTicketReleaseRate()), ("Vendor"+i));
+            vendorThreads.add(vendorThread);
+            vendorThread.start();
+        }
+
+        for (int i =0; i<2; i++) {
+            customerThread = new Thread(new Customer(ticketPool), ("Customer"+i));
+            customerThreads.add(customerThread);
+            customerThread.start();
+        }
         updateStatus("System Running...");
 
     }
 
     // Stop the system - interupt all threads
     private void stopSystem() {
-        if (vendorThread != null && customerThread != null) {
-            vendorThread.interrupt();
-            customerThread.interrupt();
+        if (vendorThreads != null && customerThreads != null) {
+            vendorThreads.forEach(Thread::interrupt);
+            customerThreads.forEach(Thread::interrupt);
         }
         updateStatus("System Stopped.");
     }
